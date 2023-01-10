@@ -84,7 +84,12 @@ class SocketPort(BaseIOPort):
         if conn is None:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.setblocking(True)
-            self._socket.connect((host, portno))
+            try:
+                self._socket.connect((host, portno))
+            except Exception as E:
+                print(f"Error connection to {(host, portno)}")
+                return
+
         else:
             self._socket = conn
 
@@ -95,41 +100,31 @@ class SocketPort(BaseIOPort):
 
         self._rfile = self._socket.makefile('rb', **kwargs)
         self._wfile = self._socket.makefile('wb', **kwargs)
-        
+
     def _get_device_type(self):
         return 'socket'
 
     def _receive(self, block=True):
+        # while _is_readable(self._rfile): # RN
         while True:
-            data = self._rfile.read(1)
-            if len(data):
-                print(data.hex())
-                self._parser.feed_byte(ord(data))
-            else:
-                print("...")    
+            try:
+                byte = self._rfile.read(1)
+                
+            except socket.error as err:
+                raise IOError(err.args[1])
+            if len(byte) == 0:
+                # The other end has disconnected.
                 self.close()
-                print("...")
                 break
+            else:
+                self._parser.feed_byte(ord(byte))
+                if self._parser.pending()==1:   # RN
+                    break
 
-        # while _is_readable(self._socket):
-        #     try:
-        #         byte = self._rfile.read(1)
-        #     except socket.error as err:
-        #         raise IOError(err.args[1])
-            
-        #     if len(byte) == 0:
-        #         # The other end has disconnected.
-        #         self.close()
-        #         break
-        #     else:
-        #         self._parser.feed_byte(ord(byte))
-        
-        
     def _send(self, message):
         try:
             self._wfile.write(message.bin())
             self._wfile.flush()
-        
         except socket.error as err:
             if err.errno == 32:
                 # Broken pipe. The other end has disconnected.
@@ -138,9 +133,9 @@ class SocketPort(BaseIOPort):
             raise IOError(err.args[1])
 
     def _close(self):
-        # RN Fix: properly disconnect from server on close()
-        if self._wfile: self._wfile.close()
-        if self._rfile: self._rfile.close()
+
+        if hasattr(self, "_wfile"): self._wfile.close()
+        if hasattr(self, "_rfile"): self._rfile.close()
         self._socket.close()
 
 
