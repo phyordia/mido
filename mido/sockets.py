@@ -11,6 +11,7 @@ from .py2 import PY2
 def _is_readable(socket):
     """Return True if there is data to be read on the socket."""
 
+    
     timeout = 0
     (rlist, wlist, elist) = select.select(
         [socket.fileno()], [], [], timeout)
@@ -104,7 +105,7 @@ class SocketPort(BaseIOPort):
                 byte = self._rfile.read(1)
             except socket.error as err:
                 raise IOError(err.args[1])
-            if byte == '':
+            if len(byte) == 0:
                 # The other end has disconnected.
                 self.close()
                 break
@@ -115,6 +116,7 @@ class SocketPort(BaseIOPort):
         try:
             self._wfile.write(message.bin())
             self._wfile.flush()
+            self._wfile.flush()
         except socket.error as err:
             if err.errno == 32:
                 # Broken pipe. The other end has disconnected.
@@ -123,6 +125,9 @@ class SocketPort(BaseIOPort):
             raise IOError(err.args[1])
 
     def _close(self):
+
+        self._wfile.close()
+        self._rfile.close()
         self._socket.close()
 
 
