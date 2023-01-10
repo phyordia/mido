@@ -95,28 +95,41 @@ class SocketPort(BaseIOPort):
 
         self._rfile = self._socket.makefile('rb', **kwargs)
         self._wfile = self._socket.makefile('wb', **kwargs)
-
+        
     def _get_device_type(self):
         return 'socket'
 
     def _receive(self, block=True):
-        while _is_readable(self._socket):
-            try:
-                byte = self._rfile.read(1)
-            except socket.error as err:
-                raise IOError(err.args[1])
-            if len(byte) == 0:
-                # The other end has disconnected.
-                self.close()
-                break
+        while True:
+            data = self._rfile.read(1)
+            if len(data):
+                print(data.hex())
+                self._parser.feed_byte(ord(data))
             else:
-                self._parser.feed_byte(ord(byte))
+                print("...")    
+                self.close()
+                print("...")
+                break
 
+        # while _is_readable(self._socket):
+        #     try:
+        #         byte = self._rfile.read(1)
+        #     except socket.error as err:
+        #         raise IOError(err.args[1])
+            
+        #     if len(byte) == 0:
+        #         # The other end has disconnected.
+        #         self.close()
+        #         break
+        #     else:
+        #         self._parser.feed_byte(ord(byte))
+        
+        
     def _send(self, message):
         try:
             self._wfile.write(message.bin())
             self._wfile.flush()
-            self._wfile.flush()
+        
         except socket.error as err:
             if err.errno == 32:
                 # Broken pipe. The other end has disconnected.
@@ -125,9 +138,9 @@ class SocketPort(BaseIOPort):
             raise IOError(err.args[1])
 
     def _close(self):
-
-        self._wfile.close()
-        self._rfile.close()
+        # RN Fix: properly disconnect from server on close()
+        if self._wfile: self._wfile.close()
+        if self._rfile: self._rfile.close()
         self._socket.close()
 
 

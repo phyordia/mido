@@ -51,6 +51,7 @@ class Parser(object):
 
         The byte must be an integer in range 0..255.
         """
+
         self._tok.feed_byte(byte)
         self._decode()
 
