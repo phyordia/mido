@@ -84,12 +84,8 @@ class SocketPort(BaseIOPort):
         if conn is None:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._socket.setblocking(True)
-            try:
-                self._socket.connect((host, portno))
-            except Exception as E:
-                print(f"Error connection to {(host, portno)}")
-                return
-
+            self._socket.connect((host, portno))
+            
         else:
             self._socket = conn
 
