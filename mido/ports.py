@@ -78,6 +78,7 @@ class BasePort(object):
             return
 
         self.name = name
+
         if self._locking:
             self._lock = threading.RLock()
         else:
@@ -172,6 +173,9 @@ class BaseInput(BasePort):
     def iter_pending(self):
         """Iterate through pending messages."""
         while True:
+            # if self.closed:
+                # raise Exception("bosta")
+
             msg = self.poll()
             if msg is None:
                 return
@@ -207,7 +211,7 @@ class BaseInput(BasePort):
             else:
                 return None
 
-        while True:
+        while True:            
             with self._lock:
                 msg = self._receive(block=block)
                 if msg:
