@@ -163,6 +163,7 @@ class BaseInput(BasePort):
         self._parser = Parser()
         self._messages = self._parser.messages  # Shortcut.
 
+
     def _check_callback(self):
         if hasattr(self, 'callback') and self.callback is not None:
             raise ValueError('a callback is set for this port')
@@ -172,10 +173,13 @@ class BaseInput(BasePort):
 
     def iter_pending(self):
         """Iterate through pending messages."""
-        while True:
-            # if self.closed:
-                # raise Exception("bosta")
 
+        # RN: Prevents the iterator from being stuck wating for the next message before one can properly close it
+        # One needs to check if the message yield is StopIteration
+        if self.closed: 
+            yield StopIteration
+
+        while True:
             msg = self.poll()
             if msg is None:
                 return
@@ -195,6 +199,7 @@ class BaseInput(BasePort):
         IOError will be raised. TODO: this seems a bit inconsistent. Should
         different errors be raised? What's most useful here?
         """
+
         if not self.is_input:
             raise ValueError('Not an input port')
 
