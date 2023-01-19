@@ -86,6 +86,7 @@ class SocketPort(BaseIOPort):
             self._socket.setblocking(True)
             self._socket.connect((host, portno))
             
+
         else:
             self._socket = conn
 
@@ -101,7 +102,6 @@ class SocketPort(BaseIOPort):
         return 'socket'
 
     def _receive(self, block=True):
-        # while _is_readable(self._rfile): # RN
         while True:
             try:
                 byte = self._rfile.read(1)
@@ -125,13 +125,17 @@ class SocketPort(BaseIOPort):
             if err.errno == 32:
                 # Broken pipe. The other end has disconnected.
                 self.close()
+                return
 
             raise IOError(err.args[1])
 
     def _close(self):
-
-        if hasattr(self, "_wfile"): self._wfile.close()
-        if hasattr(self, "_rfile"): self._rfile.close()
+        try:
+            if hasattr(self, "_wfile"): self._wfile.close()
+            if hasattr(self, "_rfile"): self._rfile.close()
+        except BrokenPipeError:
+            self._socket.close()    
+            return
         self._socket.close()
 
 
@@ -168,4 +172,4 @@ def parse_address(address):
 
 
 def format_address(host, portno):
-    return '{}:{:d}'.format(host, portno) #RN
+    return '{}{:d}'.format(host, portno)

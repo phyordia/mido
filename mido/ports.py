@@ -107,7 +107,6 @@ class BasePort(object):
                         self.reset()
                     except IOError:
                         pass
-
                 self._close()
                 self.closed = True
 
@@ -173,7 +172,6 @@ class BaseInput(BasePort):
 
     def iter_pending(self):
         """Iterate through pending messages."""
-
         # RN: Prevents the iterator from being stuck wating for the next message before one can properly close it
         # One needs to check if the message yield is StopIteration
         if self.closed: 
